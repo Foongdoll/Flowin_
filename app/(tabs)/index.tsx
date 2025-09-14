@@ -1,98 +1,90 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { router } from "expo-router";
+import React, { useMemo } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCalendar } from "../../components/provider/CalendarProvider";
+import { useRecents } from "../../components/provider/RecentsProvider";
+import { useBoard } from "../../components/provider/BoardProvider";
+import Card from "../../components/ui/Card";
+import HeaderBar from "../../components/ui/HeaderBar";
+import ListItem from "../../components/ui/ListItem";
 
 export default function HomeScreen() {
+  const { lastNote, lastPdf } = useRecents();
+  const { events } = useCalendar();
+  const { posts } = useBoard();
+  const upcoming = useMemo(() => {
+    const now = new Date();
+    return events
+      .filter((e) => new Date(e.end) >= now)
+      .sort((a, b) => a.start.localeCompare(b.start))
+      .slice(0, 3);
+  }, [events]);
+  const recentPosts = useMemo(() => posts.slice(0, 5), [posts]);
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={styles.container}>
+      <HeaderBar title="Flowin" subtitle="학습을 더 효과적으로" />    
+      <Text style={styles.section}>캘린더(다가오는 일정)</Text>
+      <View style={styles.grid}>
+        {upcoming.length === 0 ? (
+          <Text style={styles.muted}>다가오는 일정이 없습니다.</Text>
+        ) : (
+          upcoming.map((e) => (
+            <Card key={e.id} title={e.title} subtitle={`${formatDayTime(e.start)} • ${e.place || "장소 미정"}`} onPress={() => router.push({ pathname: "/(tabs)/calendar/edit", params: { id: e.id } })} />
+          ))
+        )}
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <Text style={styles.section}>최근</Text>
+      <View style={styles.grid}>
+        <Card
+          title={lastNote?.title || "최근 노트 없음"}
+          subtitle="마지막으로 편집한 노트"
+          icon="document-text-outline"
+          onPress={() => router.push("/(tabs)/notes" as any)}
+        />
+        <Card
+          title={lastPdf?.title || "최근 PDF 없음"}
+          subtitle="마지막으로 본 PDF"
+          icon="book-outline"
+          onPress={() => router.push("/(tabs)/study" as any)}
+        />
+      </View>
+
+      <View style={styles.rowHeader}>
+        <Text style={styles.section}>게시판</Text>
+        <Pressable onPress={() => router.push("/(tabs)/board" as any)} hitSlop={10}>
+          <Text style={styles.more}>+ more</Text>
+        </Pressable>
+      </View>
+      <View style={[styles.grid, { paddingHorizontal: 16 }]}>
+        {recentPosts.map((p) => (
+          <ListItem
+            key={p.id}
+            title={p.title}
+            subtitle={`[${p.category}] ${p.author} • ${new Date(p.createdAt).toLocaleDateString()}`}
+            onPress={() => router.push({ pathname: "/(tabs)/board/[id]", params: { id: p.id } })}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  container: { flex: 1, padding: 16, paddingTop: 0, backgroundColor: "#fff" },
+  section: { fontSize: 14, fontWeight: "700", color: "#6b7280", margin: 16 },
+  grid: { gap: 12, paddingHorizontal: 16 },
+  muted: { color: "#6b7280" },
+  rowHeader: { marginHorizontal: 16, marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  more: { color: "#2563eb", fontWeight: "800" },
 });
+
+function formatDayTime(iso: string) {
+  try {
+    const d = new Date(iso);
+    const z = (n: number) => `${n}`.padStart(2, "0");
+    return `${d.getFullYear()}.${z(d.getMonth() + 1)}.${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;
+  } catch {
+    return iso;
+  }
+}
