@@ -12,6 +12,9 @@ export default function PdfViewer() {
   const [drawOn, setDrawOn] = useState(false);
   const [drawMode, setDrawMode] = useState<"dots" | "lines">("lines");
   const [clearKey, setClearKey] = useState(0);
+  const [undoKey, setUndoKey] = useState(0);
+  const [tool, setTool] = useState<"pen" | "eraser">("pen");
+  const [strokeCount, setStrokeCount] = useState(0);
   const [memos, setMemos] = useState<string[]>([]);
   const { setLastPdf } = useRecents();
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
@@ -43,6 +46,8 @@ export default function PdfViewer() {
       <View style={styles.toolbarRow}>
         <IconButton name={maskOn ? "eye-off-outline" : "eye-outline"} onPress={() => { setMaskOn((v) => !v); if (maskOn) setRevealed(new Set()); }} background="#111827" color="#fff" />
         <IconButton name={drawMode === "lines" ? "remove-outline" : "ellipsis-horizontal"} onPress={() => setDrawMode((m) => (m === "lines" ? "dots" : "lines"))} background="#111827" color="#fff" />
+        <IconButton name="cut-outline" onPress={() => setTool((t) => (t === "pen" ? "eraser" : "pen"))} background={tool === "eraser" ? "#111827" : undefined} color={tool === "eraser" ? "#fff" : "#111827"} />
+        <IconButton name="return-up-back-outline" onPress={() => setUndoKey((k) => k + 1)} disabled={strokeCount === 0} />
         <IconButton name="trash-outline" onPress={() => setClearKey((k) => k + 1)} />
         <IconButton name="create-outline" onPress={addMemo} background="#111827" color="#fff" />
       </View>
@@ -60,7 +65,14 @@ export default function PdfViewer() {
             <Text style={styles.text}>{maskOn && !revealed.has(idx) ? "■■■■■■■■■■■■■■■■■■" : line}</Text>
           </Pressable>
         ))}
-        <DrawingCanvas enabled={drawOn} mode={drawMode} clearTrigger={clearKey} />
+        <DrawingCanvas
+          enabled={drawOn}
+          mode={drawMode}
+          clearTrigger={clearKey}
+          tool={tool}
+          undoTrigger={undoKey}
+          onStrokeCountChange={setStrokeCount}
+        />
       </View>
 
       <View style={styles.memoBox}>

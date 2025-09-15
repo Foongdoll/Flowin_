@@ -1,27 +1,63 @@
 import React, { useMemo, useRef, useState } from "react";
-import { View, Text, FlatList, StyleSheet, TextInput, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, FlatList, StyleSheet, TextInput, KeyboardAvoidingView, Platform, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import HeaderBar from "../../../components/ui/HeaderBar";
 import IconButton from "../../../components/ui/IconButton";
+import { Image as ExpoImage } from "expo-image";
+// Image/Video picking requires: expo install expo-image-picker
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import * as ImagePicker from "expo-image-picker";
 
-type Msg = { id: string; from: "me" | "friend"; text: string };
+type Msg =
+  | { id: string; from: "me" | "friend"; type: "text"; text: string }
+  | { id: string; from: "me" | "friend"; type: "image"; uri: string }
+  | { id: string; from: "me" | "friend"; type: "video"; uri: string };
 
 export default function ChatRoom() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [text, setText] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([
-    { id: "m1", from: "friend", text: "안녕! 공부 잘 되고 있어?" },
-    { id: "m2", from: "me", text: "응! 노트 정리 중이야." },
+    { id: "m1", from: "friend", type: "text", text: "안녕! 공부 잘 되고 있어?" },
+    { id: "m2", from: "me", type: "text", text: "응! 노트 정리 중이야." },
   ]);
   const listRef = useRef<FlatList<Msg>>(null);
+  const [showEmoji, setShowEmoji] = useState(false);
 
   const friendName = useMemo(() => (id ? `친구 (${id})` : "친구"), [id]);
 
   const send = () => {
     if (!text.trim()) return;
-    setMsgs((prev) => [...prev, { id: `${Date.now()}`, from: "me", text }]);
+    setMsgs((prev) => [...prev, { id: `${Date.now()}`, from: "me", type: "text", text }]);
     setText("");
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+  };
+
+  const pickImage = async () => {
+    try {
+      // Request permission if needed
+      await ImagePicker.requestMediaLibraryPermissionsAsync?.();
+      const result = await ImagePicker.launchImageLibraryAsync?.({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      if (result?.canceled || !result?.assets?.length) return;
+      const uri = result.assets[0].uri;
+      setMsgs((prev) => [...prev, { id: `${Date.now()}`, from: "me", type: "image", uri }]);
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+    } catch (e) {
+      // noop: module may not be installed in dev
+    }
+  };
+
+  const pickVideo = async () => {
+    try {
+      await ImagePicker.requestMediaLibraryPermissionsAsync?.();
+      const result = await ImagePicker.launchImageLibraryAsync?.({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8 });
+      if (result?.canceled || !result?.assets?.length) return;
+      const uri = result.assets[0].uri;
+      setMsgs((prev) => [...prev, { id: `${Date.now()}`, from: "me", type: "video", uri }]);
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+    } catch (e) {
+      // noop
+    }
   };
 
   return (
@@ -32,14 +68,45 @@ export default function ChatRoom() {
           ref={listRef}
           data={msgs}
           keyExtractor={(m) => m.id}
-          renderItem={({ item }) => (
-            <View style={[styles.bubble, item.from === "me" ? styles.mine : styles.theirs]}>
-              <Text style={[styles.msg, item.from === "me" && styles.msgMine]}>{item.text}</Text>
-            </View>
-          )}
+          renderItem={({ item }) => {
+            const common = [styles.bubble, item.from === "me" ? styles.mine : styles.theirs] as const;
+            if (item.type === "text") {
+              return (
+                <View style={common}>
+                  <Text style={[styles.msg, item.from === "me" && styles.msgMine]}>{item.text}</Text>
+                </View>
+              );
+            }
+            if (item.type === "image") {
+              return (
+                <View style={common}>
+                  <ExpoImage source={{ uri: item.uri }} style={styles.image} contentFit="cover" />
+                </View>
+              );
+            }
+            // video placeholder (render thumbnail/player later with expo-av)
+            return (
+              <View style={common}>
+                <Text style={[styles.msg, item.from === "me" && styles.msgMine]}>동영상 첨부됨</Text>
+              </View>
+            );
+          }}
           contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 76 }}
         />
+        {/* Emoji picker */}
+        {showEmoji ? (
+          <View style={styles.emojiPanel}>
+            {"😀 😂 😍 🤔 🙌 👍 👀 🥳 😭 😎 💯 ⭐️ ❤️ ✨ 🔥 🎉 📌 📝 🧠".split(" ").map((e, i) => (
+              <Pressable key={`${e}-${i}`} onPress={() => setText((t) => t + e)} style={styles.emojiCell}>
+                <Text style={{ fontSize: 22 }}>{e}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         <View style={styles.inputRow}>
+          <IconButton name={showEmoji ? "happy" : "happy-outline"} onPress={() => setShowEmoji((v) => !v)} />
+          <IconButton name="image-outline" onPress={pickImage} />
+          <IconButton name="videocam-outline" onPress={pickVideo} />
           <TextInput style={styles.input} value={text} onChangeText={setText} placeholder="메시지 입력" />
           <IconButton name="send" color="#fff" background="#111827" onPress={send} />
         </View>
@@ -57,4 +124,7 @@ const styles = StyleSheet.create({
   msgMine: { color: "#ffffff" },
   inputRow: { flexDirection: "row", gap: 8, padding: 12, borderTopWidth: 1, borderColor: "#e5e7eb", position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#fff" },
   input: { flex: 1, borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12 },
+  image: { width: 160, height: 160, borderRadius: 8 },
+  emojiPanel: { position: "absolute", left: 0, right: 0, bottom: 60, backgroundColor: "#fff", borderTopWidth: 1, borderColor: "#e5e7eb", paddingHorizontal: 8, paddingTop: 8, paddingBottom: 4, flexDirection: "row", flexWrap: "wrap" },
+  emojiCell: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 6, margin: 4 },
 });

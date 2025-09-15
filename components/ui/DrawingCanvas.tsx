@@ -10,9 +10,14 @@ type Props = {
   strokeWidth?: number;
   mode?: "dots" | "lines";
   clearTrigger?: number; // increment to clear
+  // New features
+  tool?: "pen" | "eraser"; // select drawing tool
+  undoTrigger?: number; // increment to undo last stroke
+  eraserRadius?: number; // px radius to detect stroke deletion
+  onStrokeCountChange?: (count: number) => void; // observe stroke count
 };
 
-export default function DrawingCanvas({ enabled = false, strokeColor = "#ef4444", strokeWidth = 4, mode = "dots", clearTrigger = 0 }: Props) {
+export default function DrawingCanvas({ enabled = false, strokeColor = "#ef4444", strokeWidth = 4, mode = "dots", clearTrigger = 0, tool = "pen", undoTrigger = 0, eraserRadius = 16, onStrokeCountChange }: Props) {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const current = useRef<Stroke>([]);
@@ -46,6 +51,29 @@ export default function DrawingCanvas({ enabled = false, strokeColor = "#ef4444"
     // Clear all strokes when clearTrigger changes
     setStrokes([]);
   }, [clearTrigger]);
+
+  useEffect(() => {
+    // Undo last stroke when undoTrigger changes
+    setStrokes((prev) => (prev.length ? prev.slice(0, prev.length - 1) : prev));
+  }, [undoTrigger]);
+
+  useEffect(() => {
+    if (onStrokeCountChange) onStrokeCountChange(strokes.length);
+  }, [strokes.length, onStrokeCountChange]);
+
+  const eraseAt = useCallback(
+    (x: number, y: number) => {
+      const r2 = eraserRadius * eraserRadius;
+      setStrokes((prev) =>
+        prev.filter((stroke) => !stroke.some((p) => {
+          const dx = p.x - x;
+          const dy = p.y - y;
+          return dx * dx + dy * dy <= r2;
+        }))
+      );
+    },
+    [eraserRadius]
+  );
 
   const dots = useMemo(() => {
     return strokes.flatMap((stroke, si) =>
@@ -111,14 +139,26 @@ export default function DrawingCanvas({ enabled = false, strokeColor = "#ef4444"
       onMoveShouldSetResponder={() => enabled}
       onResponderGrant={(e) => {
         const { locationX, locationY } = e.nativeEvent;
-        start(locationX, locationY);
+        if (tool === "eraser") {
+          eraseAt(locationX, locationY);
+        } else {
+          start(locationX, locationY);
+        }
       }}
       onResponderMove={(e) => {
         const { locationX, locationY } = e.nativeEvent;
-        move(locationX, locationY);
+        if (tool === "eraser") {
+          eraseAt(locationX, locationY);
+        } else {
+          move(locationX, locationY);
+        }
       }}
-      onResponderRelease={end}
-      onResponderTerminate={end}
+      onResponderRelease={() => {
+        if (tool === "pen") end();
+      }}
+      onResponderTerminate={() => {
+        if (tool === "pen") end();
+      }}
     >
       {/* Drawing layer */}
       {mode === "dots" ? dots : lines}
