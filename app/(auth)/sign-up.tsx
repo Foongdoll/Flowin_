@@ -1,10 +1,12 @@
 import React, { useMemo, useRef, useState } from "react";
-import { View, Text, StyleSheet, Pressable, TextInput } from "react-native";
+import { View, Text, StyleSheet, Pressable, TextInput, Alert } from "react-native";
 import { Link, router } from "expo-router";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Screen from "../../components/ui/Screen";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../components/provider/AuthProvider";
+import { palette } from "../../components/ui/theme";
 
 export default function SignUpScreen() {
   const [name, setName] = useState("");
@@ -18,6 +20,8 @@ export default function SignUpScreen() {
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
+  const { signUp } = useAuth();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const emailOk = useMemo(() => /\S+@\S+\.\S+/.test(email), [email]);
   const pwdRules = useMemo(() => ({
@@ -43,8 +47,24 @@ export default function SignUpScreen() {
     if (loading || !isValid) return;
     try {
       setLoading(true);
-      await new Promise((r) => setTimeout(r, 700));
-      router.replace("/(auth)");
+      setErrorMessage(null);    
+      await signUp({ name, email, password });
+      router.replace("/(tabs)");
+    } catch (error) {
+      let message = "회원가입에 실패했습니다.";
+      if (error instanceof Error) {
+        const lower = error.message.toLowerCase();
+        if (lower.includes("email") && lower.includes("exists")) {
+          message = "이미 사용 중인 이메일입니다.";
+        } else if (lower.includes("password")) {
+          message = "비밀번호 조건을 다시 확인해주세요.";
+        } else if (lower.includes("network")) {
+          message = "네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        } else {
+          message = error.message;
+        }
+      }
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }
@@ -79,7 +99,7 @@ export default function SignUpScreen() {
         onChangeText={setEmail}
         onBlur={() => setTouched((t) => ({ ...t, email: true }))}
         error={(touched.email || submitted) ? errors.email : undefined}
-        helper={!touched.email && "로그인에 사용할 이메일" || undefined}
+        helper={!touched.email ? "로그인에 사용할 이메일" : undefined}
         leftIcon="mail-outline"
         returnKeyType="next"
         ref={emailRef}
@@ -104,9 +124,11 @@ export default function SignUpScreen() {
         />
         <View style={styles.meterRow}>
           {[0, 1, 2, 3].map((i) => {
-            const color = pwdScore === 0 ? "#e5e7eb" : pwdScore === 1 ? "#ef4444" : pwdScore === 2 ? "#f59e0b" : "#10b981";
+            const levels = [palette.danger, palette.warning, palette.success];
+            const tier = Math.min(pwdScore, 3);
+            const color = tier === 0 ? "rgba(148,163,184,0.35)" : levels[tier - 1];
             const active = i < pwdScore;
-            return <View key={i} style={[styles.meterBar, { backgroundColor: active ? color : "#e5e7eb" }]} />;
+            return <View key={i} style={[styles.meterBar, active ? { backgroundColor: color } : null]} />;
           })}
         </View>
         <View style={styles.rulesRow}>
@@ -134,10 +156,11 @@ export default function SignUpScreen() {
       />
 
       <Pressable style={styles.agreeRow} onPress={() => setAgree((a) => !a)} accessibilityRole="checkbox" accessibilityState={{ checked: agree }}>
-        <Ionicons name={agree ? "checkbox-outline" : "square-outline"} size={20} color={agree ? "#111827" : "#6b7280"} />
+        <Ionicons name={agree ? "checkbox-outline" : "square-outline"} size={20} color={agree ? palette.accent : palette.textMuted} />
         <Text style={styles.agreeText}>약관 및 개인정보 처리방침 동의</Text>
       </Pressable>
       {(touched.agree || submitted) && errors.agree ? <Text style={styles.error}>{errors.agree}</Text> : null}
+      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
       <Button title="회원가입" onPress={onSignUp} loading={loading} disabled={!isValid} />
 
@@ -152,30 +175,25 @@ export default function SignUpScreen() {
 function Rule({ ok, text }: { ok: boolean; text: string }) {
   return (
     <View style={styles.rule}>
-      <Ionicons name={ok ? "checkmark-circle" : "ellipse-outline"} size={14} color={ok ? "#10b981" : "#9ca3af"} />
-      <Text style={[styles.ruleText, ok && { color: "#10b981" }]}>{text}</Text>
+      <Ionicons name={ok ? "checkmark-circle" : "ellipse-outline"} size={14} color={ok ? palette.success : palette.textMuted} />
+      <Text style={[styles.ruleText, ok && { color: palette.success }]}>{text}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: "center", marginBottom: 8 },
-  brand: { fontSize: 28, fontWeight: "800" },
-  subtitle: { color: "#6b7280" },
-  meterRow: { flexDirection: "row", gap: 6 },
-  meterBar: { flex: 1, height: 6, borderRadius: 4 },
-  meterEmpty: { backgroundColor: "#e5e7eb" },
-  meter1: { backgroundColor: "#ef4444" },
-  meter2: { backgroundColor: "#f59e0b" },
-  meter3: { backgroundColor: "#10b981" },
-  meter4: { backgroundColor: "#10b981" },
+  header: { alignItems: "center", marginBottom: 12, gap: 6 },
+  brand: { fontSize: 30, fontWeight: "900", color: palette.accentAlt, letterSpacing: 1.6, textTransform: "uppercase" },
+  subtitle: { color: palette.textSecondary, letterSpacing: 0.4 },
+  meterRow: { flexDirection: "row", gap: 6, marginTop: 4 },
+  meterBar: { flex: 1, height: 6, borderRadius: 4, backgroundColor: "rgba(148,163,184,0.25)" },
   rulesRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
   rule: { flexDirection: "row", alignItems: "center", gap: 6 },
-  ruleText: { color: "#6b7280", fontSize: 12 },
+  ruleText: { color: palette.textSecondary, fontSize: 12 },
   agreeRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
-  agreeText: { color: "#111827" },
-  footerRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 6 },
-  footerText: { color: "#6b7280" },
-  link: { color: "#2563eb", fontWeight: "700" },
-  error: { color: "#ef4444", fontSize: 12 },
+  agreeText: { color: palette.textSecondary },
+  footerRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 12 },
+  footerText: { color: palette.textSecondary },
+  link: { color: palette.accentWarm, fontWeight: "800", letterSpacing: 0.2 },
+  error: { color: palette.danger, fontSize: 12 },
 });

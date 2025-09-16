@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import IconButton from "./IconButton";
+import { palette } from "./theme";
 
 type Props = {
   year: number; // 4-digit
@@ -11,6 +12,8 @@ type Props = {
   onSelect?: (d: Date) => void;
   eventsByDayKey?: Record<string, number>; // key: YYYY-MM-DD
 };
+
+const CELL_WIDTH = `${100 / 7}%` as const;
 
 export default function CalendarMonth({ year, month, selected, onPrevMonth, onNextMonth, onSelect, eventsByDayKey = {} }: Props) {
   const todayKey = keyOf(new Date());
@@ -62,7 +65,7 @@ export default function CalendarMonth({ year, month, selected, onPrevMonth, onNe
               </Text>
               <View style={styles.dotRow}>
                 {isToday && !isSelected ? <View style={styles.todayDot} /> : null}
-                {events > 0 ? <View style={styles.eventDot} /> : null}
+                {events > 0 ? <View style={[styles.eventDot, { opacity: Math.min(1, 0.45 + events * 0.15) }]} /> : null}
               </View>
             </Pressable>
           );
@@ -77,7 +80,6 @@ const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"]; // Sun..S
 function buildMonthGrid(year: number, month: number) {
   const first = new Date(year, month, 1);
   const start = new Date(first);
-  // Move start to Sunday of the week containing the 1st
   start.setDate(1 - first.getDay());
   const days: Date[] = [];
   for (let i = 0; i < 42; i++) {
@@ -89,37 +91,54 @@ function buildMonthGrid(year: number, month: number) {
 }
 
 function keyOf(d: Date) {
-  const z = (n: number) => `${n}`.padStart(2, "0");
-  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
+  const z = (n: number) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
 }
 
 function formatYearMonth(y: number, m: number) {
-  return `${y}.${(m + 1).toString().padStart(2, "0")}`;
+  return y + "." + (m + 1).toString().padStart(2, "0");
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#e5e7eb" },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 8 },
-  monthTitle: { fontSize: 16, fontWeight: "800", color: "#111827" },
-  weekHeader: { flexDirection: "row", paddingHorizontal: 8, paddingBottom: 6 },
-  weekLabel: { flex: 1, textAlign: "center", color: "#6b7280", fontWeight: "700" },
-  grid: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 4, paddingBottom: 8 },
+  container: {
+    backgroundColor: palette.backgroundAlt,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: palette.cardBorder,
+    paddingBottom: 12,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: palette.cardBorder,
+  },
+  monthTitle: { fontSize: 18, fontWeight: "800", color: palette.textPrimary, letterSpacing: 0.4 },
+  weekHeader: { flexDirection: "row", paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6 },
+  weekLabel: { flex: 1, textAlign: "center", color: palette.textSecondary, fontWeight: "700", letterSpacing: 0.2 },
+  grid: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 6, paddingBottom: 8 },
   cell: {
-    width: `${100 / 7}%`,
+    width: CELL_WIDTH,
     aspectRatio: 1,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
+    borderRadius: 14,
+    marginVertical: 4,
   },
-  pressed: { backgroundColor: "#f3f4f6" },
-  selected: { backgroundColor: "#111827" },
-  dayText: { fontWeight: "700", color: "#111827" },
-  selectedText: { color: "#ffffff" },
-  outMonth: { opacity: 0.55 },
-  outMonthText: { color: "#9ca3af" },
-  sunText: { color: "#ef4444" },
-  satText: { color: "#2563eb" },
-  dotRow: { flexDirection: "row", gap: 4, marginTop: 4 },
-  todayDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: "#111827" },
-  eventDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#10b981" },
+  pressed: { backgroundColor: "rgba(148,163,184,0.16)" },
+  selected: { backgroundColor: "rgba(99,102,241,0.55)", borderWidth: 1, borderColor: palette.accent },
+  dayText: { fontWeight: "700", color: palette.textPrimary },
+  selectedText: { color: palette.textPrimary },
+  outMonth: { opacity: 0.45 },
+  outMonthText: { color: palette.textMuted },
+  sunText: { color: palette.danger },
+  satText: { color: palette.accent },
+  dotRow: { flexDirection: "row", gap: 4, marginTop: 6 },
+  todayDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: palette.warning },
+  eventDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.accentAlt },
 });
+
+export { keyOf };

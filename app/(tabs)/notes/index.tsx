@@ -5,6 +5,7 @@ import HeaderBar from "../../../components/ui/HeaderBar";
 import SearchInput from "../../../components/ui/SearchInput";
 import ListItem from "../../../components/ui/ListItem";
 import FAB from "../../../components/ui/FAB";
+import { palette } from "../../../components/ui/theme";
 
 type Note = { id: string; title: string };
 
@@ -37,6 +38,6 @@ export default function NotesIndex() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  body: { padding: 16, gap: 12 },
+  container: { flex: 1, backgroundColor: palette.background },
+  body: { padding: 20, gap: 16 },
 });

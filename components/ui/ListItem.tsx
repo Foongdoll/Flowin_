@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { palette, shadows } from "./theme";
 
 type Props = {
   title: string;
@@ -17,15 +18,24 @@ export default function ListItem({ title, subtitle, onPress, right, style }: Pro
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
       </View>
-      {right ?? <Ionicons name="chevron-forward" size={16} color="#9ca3af" />}
+      {right ?? <Ionicons name="chevron-forward" size={16} color={palette.textMuted} />}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  item: { padding: 14, borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, backgroundColor: "#fff", flexDirection: "row", alignItems: "center", gap: 10 },
-  pressed: { backgroundColor: "#f9fafb" },
-  title: { fontSize: 15, fontWeight: "700", color: "#111827" },
-  subtitle: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  item: {
+    padding: 16,
+    borderWidth: 1,
+    borderColor: palette.cardBorder,
+    borderRadius: 16,
+    backgroundColor: palette.backgroundAlt,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    ...shadows.soft,
+  },
+  pressed: { transform: [{ scale: 0.99 }] },
+  title: { fontSize: 15, fontWeight: "700", color: palette.textPrimary, letterSpacing: 0.2 },
+  subtitle: { fontSize: 12, color: palette.textSecondary, marginTop: 2 },
 });
-

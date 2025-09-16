@@ -5,6 +5,7 @@ import DrawingCanvas from "../../../components/ui/DrawingCanvas";
 import HeaderBar from "../../../components/ui/HeaderBar";
 import IconButton from "../../../components/ui/IconButton";
 import { useRecents } from "../../../components/provider/RecentsProvider";
+import { palette } from "../../../components/ui/theme";
 
 export default function PdfViewer() {
   const { id, title } = useLocalSearchParams<{ id?: string; title?: string }>();
@@ -44,12 +45,12 @@ export default function PdfViewer() {
     <View style={styles.container}>
       <HeaderBar title={typeof title === "string" ? title : "PDF 뷰어"} leftIcon="chevron-back" onLeftPress={() => router.back()} rightIcon={drawOn ? "brush" : "brush-outline"} onRightPress={() => setDrawOn((v) => !v)} />
       <View style={styles.toolbarRow}>
-        <IconButton name={maskOn ? "eye-off-outline" : "eye-outline"} onPress={() => { setMaskOn((v) => !v); if (maskOn) setRevealed(new Set()); }} background="#111827" color="#fff" />
-        <IconButton name={drawMode === "lines" ? "remove-outline" : "ellipsis-horizontal"} onPress={() => setDrawMode((m) => (m === "lines" ? "dots" : "lines"))} background="#111827" color="#fff" />
-        <IconButton name="cut-outline" onPress={() => setTool((t) => (t === "pen" ? "eraser" : "pen"))} background={tool === "eraser" ? "#111827" : undefined} color={tool === "eraser" ? "#fff" : "#111827"} />
+        <IconButton name={maskOn ? "eye-off-outline" : "eye-outline"} onPress={() => { setMaskOn((v) => !v); if (maskOn) setRevealed(new Set()); }} background={palette.accent} color={palette.textPrimary} />
+        <IconButton name={drawMode === "lines" ? "remove-outline" : "ellipsis-horizontal"} onPress={() => setDrawMode((m) => (m === "lines" ? "dots" : "lines"))} background={palette.accent} color={palette.textPrimary} />
+        <IconButton name="cut-outline" onPress={() => setTool((t) => (t === "pen" ? "eraser" : "pen"))} background={tool === "eraser" ? palette.accent : undefined} color={tool === "eraser" ? palette.textPrimary : palette.accent} />
         <IconButton name="return-up-back-outline" onPress={() => setUndoKey((k) => k + 1)} disabled={strokeCount === 0} />
         <IconButton name="trash-outline" onPress={() => setClearKey((k) => k + 1)} />
-        <IconButton name="create-outline" onPress={addMemo} background="#111827" color="#fff" />
+        <IconButton name="create-outline" onPress={addMemo} background={palette.accent} color={palette.textPrimary} />
       </View>
 
       <View style={styles.page}>
@@ -92,19 +93,20 @@ export default function PdfViewer() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  toolbarRow: { flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: "#e5e7eb" },
+  container: { flex: 1, backgroundColor: palette.background },
+  toolbarRow: { flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: palette.cardBorder },
   page: { flex: 1, padding: 16 },
   title: { fontSize: 18, fontWeight: "700", marginBottom: 10 },
   textRow: { marginBottom: 8 },
-  text: { fontSize: 16, lineHeight: 22 },
+  text: { fontSize: 16, lineHeight: 22, color: palette.textPrimary },
   memoBox: {
     borderTopWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: palette.cardBorder,
     padding: 12,
     gap: 6,
+    backgroundColor: palette.backgroundAlt,
   },
-  memoTitle: { fontWeight: "700" },
-  memoEmpty: { color: "#6b7280" },
-  memoItem: { color: "#111827" },
+  memoTitle: { fontWeight: "700", color: palette.textSecondary },
+  memoEmpty: { color: palette.textMuted },
+  memoItem: { color: palette.textPrimary },
 });

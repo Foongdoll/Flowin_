@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useBoard } from "../../../components/provider/BoardProvider";
 import HeaderBar from "../../../components/ui/HeaderBar";
+import { palette } from "../../../components/ui/theme";
 
 export default function PostDetail() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -20,8 +21,8 @@ export default function PostDetail() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  content: { padding: 16, gap: 12 },
-  meta: { color: "#6b7280" },
-  body: { color: "#111827", lineHeight: 22 },
+  container: { flex: 1, backgroundColor: palette.background },
+  content: { padding: 20, gap: 14 },
+  meta: { color: palette.textMuted },
+  body: { color: palette.textPrimary, lineHeight: 22 },
 });

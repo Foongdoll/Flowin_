@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import IconButton from "./IconButton";
+import { gradients, palette, shadows } from "./theme";
 
 type Props = {
   title: string;
@@ -14,35 +16,35 @@ type Props = {
 
 export default function HeaderBar({ title, subtitle, leftIcon, onLeftPress, rightIcon, onRightPress, style }: Props) {
   return (
-    <View style={[styles.container, style]}>
+    <LinearGradient colors={gradients.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.container, style]}>
       <View style={styles.side}>
-        {leftIcon ? <IconButton name={leftIcon} onPress={onLeftPress} /> : <View style={{ width: 36 }} />}
+        {leftIcon ? <IconButton name={leftIcon} onPress={onLeftPress} /> : <View style={{ width: 40 }} />}
       </View>
       <View style={styles.center}>
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       <View style={styles.side}>
-        {rightIcon ? <IconButton name={rightIcon} onPress={onRightPress} /> : <View style={{ width: 36 }} />}
+        {rightIcon ? <IconButton name={rightIcon} onPress={onRightPress} /> : <View style={{ width: 40 }} />}
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 56,
+    height: 72,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
-    paddingHorizontal: 8,
-    backgroundColor: "#fff",
+    borderColor: palette.cardBorder,
+    paddingHorizontal: 12,
+    backgroundColor: palette.backgroundAlt,
+    ...shadows.glow,
   },
-  side: { width: 56, alignItems: "center", justifyContent: "center" },
+  side: { width: 64, alignItems: "center", justifyContent: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 18, fontWeight: "800", color: "#111827" },
-  subtitle: { fontSize: 12, color: "#6b7280" },
+  title: { fontSize: 20, fontWeight: "900", color: palette.textPrimary, letterSpacing: 0.5, textTransform: "uppercase" },
+  subtitle: { fontSize: 12, color: palette.textSecondary, marginTop: 4, letterSpacing: 1 },
 });
-

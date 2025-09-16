@@ -1,5 +1,7 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, ActivityIndicator, ViewStyle } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { gradients, palette, shadows } from "./theme";
 
 type Props = {
   title: string;
@@ -18,17 +20,26 @@ export default function Button({ title, onPress, loading, disabled, style, varia
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,
-        variant === "primary" ? styles.primary : styles.secondary,
-        (pressed && !isDisabled) && styles.pressed,
-        isDisabled && styles.disabled,
+        variant === "primary" ? styles.primaryWrap : styles.secondaryWrap,
+        pressed && !isDisabled ? styles.pressed : null,
+        isDisabled ? styles.disabled : null,
         style,
       ]}
       onPress={onPress}
     >
-      {loading ? (
-        <ActivityIndicator color="#fff" />
+      {variant === "primary" ? (
+        <LinearGradient
+          colors={gradients.buttonPrimary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fill}
+        >
+          {loading ? <ActivityIndicator color={palette.textPrimary} /> : <Text style={styles.text}>{title}</Text>}
+        </LinearGradient>
       ) : (
-        <Text style={[styles.text, variant === "secondary" && styles.textSecondary]}>{title}</Text>
+        <View style={[styles.fill, styles.secondaryInner]}>
+          {loading ? <ActivityIndicator color={palette.textPrimary} /> : <Text style={[styles.text, styles.textSecondary]}>{title}</Text>}
+        </View>
       )}
     </Pressable>
   );
@@ -36,30 +47,39 @@ export default function Button({ title, onPress, loading, disabled, style, varia
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  fill: {
+    paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  primary: {
-    backgroundColor: "#111827",
+  primaryWrap: {
+    ...shadows.glow,
   },
-  secondary: {
-    backgroundColor: "#e5e7eb",
+  secondaryWrap: {
+    borderWidth: 1,
+    borderColor: palette.cardBorder,
+    backgroundColor: palette.backgroundAlt,
+  },
+  secondaryInner: {
+    paddingVertical: 16,
   },
   text: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
+    color: palette.textPrimary,
+    fontWeight: "800",
+    fontSize: 17,
+    letterSpacing: 0.3,
   },
   textSecondary: {
-    color: "#111827",
+    color: palette.textSecondary,
   },
   disabled: {
-    opacity: 0.6,
+    opacity: 0.55,
   },
   pressed: {
-    transform: [{ scale: 0.99 }],
+    transform: [{ scale: 0.985 }],
   },
 });
 

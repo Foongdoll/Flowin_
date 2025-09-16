@@ -5,6 +5,7 @@ import HeaderBar from "../../../components/ui/HeaderBar";
 import Input from "../../../components/ui/Input";
 import Button from "../../../components/ui/Button";
 import { useCalendar } from "../../../components/provider/CalendarProvider";
+import { palette } from "../../../components/ui/theme";
 
 export default function EditEvent() {
   const { id, start: startParam, end: endParam } = useLocalSearchParams<{ id?: string; start?: string; end?: string }>();
@@ -127,9 +128,9 @@ function toISOFromLocalString(s: string) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  form: { padding: 16, gap: 12, paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: palette.background },
+  form: { padding: 20, gap: 16, paddingBottom: 40 },
   row: { flexDirection: "row" },
   actions: { flexDirection: "row", gap: 10, marginTop: 8 },
-  error: { color: "#ef4444" },
+  error: { color: palette.danger },
 });

@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { palette } from "./theme";
 
 type Props = {
   name: keyof typeof Ionicons.glyphMap;
@@ -12,7 +13,7 @@ type Props = {
   background?: string;
 };
 
-export default function IconButton({ name, size = 20, color = "#111827", onPress, style, disabled, background }: Props) {
+export default function IconButton({ name, size = 20, color = palette.textPrimary, onPress, style, disabled, background }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -20,7 +21,7 @@ export default function IconButton({ name, size = 20, color = "#111827", onPress
       hitSlop={10}
       style={({ pressed }) => [
         styles.base,
-        background ? { backgroundColor: background } : null,
+        { backgroundColor: background ?? palette.backgroundAlt },
         disabled && { opacity: 0.5 },
         pressed && !disabled ? styles.pressed : null,
         style,
@@ -33,12 +34,13 @@ export default function IconButton({ name, size = 20, color = "#111827", onPress
 
 const styles = StyleSheet.create({
   base: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: palette.cardBorder,
   },
-  pressed: { transform: [{ scale: 0.97 }] },
+  pressed: { transform: [{ scale: 0.95 }] },
 });
-

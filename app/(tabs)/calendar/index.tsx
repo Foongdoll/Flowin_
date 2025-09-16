@@ -6,6 +6,7 @@ import ListItem from "../../../components/ui/ListItem";
 import FAB from "../../../components/ui/FAB";
 import { useCalendar } from "../../../components/provider/CalendarProvider";
 import { router } from "expo-router";
+import { palette } from "../../../components/ui/theme";
 
 export default function CalendarIndex() {
   const { events } = useCalendar();
@@ -106,9 +107,9 @@ function formatDayHeader(d: Date) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  body: { padding: 16, gap: 12 },
+  container: { flex: 1, backgroundColor: palette.background },
+  body: { padding: 20, gap: 16 },
   empty: { padding: 24, alignItems: "center" },
-  emptyText: { color: "#6b7280" },
-  section: { marginTop: 8, fontWeight: "800", color: "#111827" },
+  emptyText: { color: palette.textMuted },
+  section: { marginTop: 8, fontWeight: "800", color: palette.textSecondary },
 });

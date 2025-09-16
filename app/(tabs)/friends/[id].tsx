@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import HeaderBar from "../../../components/ui/HeaderBar";
 import IconButton from "../../../components/ui/IconButton";
 import { Image as ExpoImage } from "expo-image";
+import { palette } from "../../../components/ui/theme";
 // Image/Video picking requires: expo install expo-image-picker
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -69,7 +70,7 @@ export default function ChatRoom() {
           data={msgs}
           keyExtractor={(m) => m.id}
           renderItem={({ item }) => {
-            const common = [styles.bubble, item.from === "me" ? styles.mine : styles.theirs] as const;
+            const common = [styles.bubble, item.from === "me" ? styles.mine : styles.theirs];
             if (item.type === "text") {
               return (
                 <View style={common}>
@@ -107,8 +108,8 @@ export default function ChatRoom() {
           <IconButton name={showEmoji ? "happy" : "happy-outline"} onPress={() => setShowEmoji((v) => !v)} />
           <IconButton name="image-outline" onPress={pickImage} />
           <IconButton name="videocam-outline" onPress={pickVideo} />
-          <TextInput style={styles.input} value={text} onChangeText={setText} placeholder="메시지 입력" />
-          <IconButton name="send" color="#fff" background="#111827" onPress={send} />
+          <TextInput style={styles.input} value={text} onChangeText={setText} placeholder="메시지 입력" placeholderTextColor={palette.textMuted} />
+          <IconButton name="send" color={palette.textPrimary} background={palette.accent} onPress={send} />
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -116,15 +117,15 @@ export default function ChatRoom() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  bubble: { maxWidth: "75%", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 },
-  mine: { backgroundColor: "#111827", alignSelf: "flex-end" },
-  theirs: { backgroundColor: "#e5e7eb", alignSelf: "flex-start" },
-  msg: { color: "#111827", ...(Platform.OS !== "web" ? {} : {}) },
-  msgMine: { color: "#ffffff" },
-  inputRow: { flexDirection: "row", gap: 8, padding: 12, borderTopWidth: 1, borderColor: "#e5e7eb", position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#fff" },
-  input: { flex: 1, borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12 },
+  container: { flex: 1, backgroundColor: palette.background },
+  bubble: { maxWidth: "75%", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 },
+  mine: { backgroundColor: palette.accent, alignSelf: "flex-end" },
+  theirs: { backgroundColor: palette.backgroundAlt, alignSelf: "flex-start" },
+  msg: { color: palette.textPrimary, ...(Platform.OS !== "web" ? {} : {}) },
+  msgMine: { color: palette.textPrimary },
+  inputRow: { flexDirection: "row", gap: 8, padding: 12, borderTopWidth: 1, borderColor: palette.cardBorder, position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: palette.backgroundAlt },
+  input: { flex: 1, borderWidth: 1, borderColor: palette.cardBorder, borderRadius: 12, paddingHorizontal: 12, color: palette.textPrimary, backgroundColor: palette.background },
   image: { width: 160, height: 160, borderRadius: 8 },
-  emojiPanel: { position: "absolute", left: 0, right: 0, bottom: 60, backgroundColor: "#fff", borderTopWidth: 1, borderColor: "#e5e7eb", paddingHorizontal: 8, paddingTop: 8, paddingBottom: 4, flexDirection: "row", flexWrap: "wrap" },
-  emojiCell: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 6, margin: 4 },
+  emojiPanel: { position: "absolute", left: 0, right: 0, bottom: 60, backgroundColor: palette.backgroundAlt, borderTopWidth: 1, borderColor: palette.cardBorder, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 4, flexDirection: "row", flexWrap: "wrap" },
+  emojiCell: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 8, margin: 4, backgroundColor: "rgba(124,92,255,0.15)" },
 });

@@ -6,6 +6,7 @@ import ListItem from "../../../components/ui/ListItem";
 import FAB from "../../../components/ui/FAB";
 import { useBoard } from "../../../components/provider/BoardProvider";
 import { router } from "expo-router";
+import { palette } from "../../../components/ui/theme";
 
 export default function BoardIndex() {
   const { posts, categories } = useBoard();
@@ -64,11 +65,11 @@ function formatRelative(iso: string) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  body: { padding: 16, gap: 12 },
-  catRow: { gap: 8, paddingRight: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: "#e5e7eb" },
-  chipActive: { backgroundColor: "#111827", borderColor: "#111827" },
-  chipText: { color: "#111827", fontWeight: "700" },
-  chipTextActive: { color: "#fff" },
+  container: { flex: 1, backgroundColor: palette.background },
+  body: { padding: 20, gap: 16 },
+  catRow: { gap: 10, paddingRight: 8 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: palette.cardBorder, backgroundColor: "rgba(148,163,184,0.1)" },
+  chipActive: { backgroundColor: palette.accent, borderColor: palette.accent },
+  chipText: { color: palette.textSecondary, fontWeight: "700" },
+  chipTextActive: { color: palette.textPrimary },
 });

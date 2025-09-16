@@ -5,6 +5,7 @@ import HeaderBar from "../../../components/ui/HeaderBar";
 import SearchInput from "../../../components/ui/SearchInput";
 import ListItem from "../../../components/ui/ListItem";
 import FAB from "../../../components/ui/FAB";
+import { palette } from "../../../components/ui/theme";
 
 const samplePdfs = [
   { id: "1", title: "영어 단어장.pdf" },
@@ -40,6 +41,6 @@ export default function StudyIndex() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  body: { padding: 16, gap: 12 },
+  container: { flex: 1, backgroundColor: palette.background },
+  body: { padding: 20, gap: 16 },
 });

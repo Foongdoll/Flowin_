@@ -1,16 +1,24 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { palette } from "../../components/ui/theme";
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#111827",
-        tabBarInactiveTintColor: "#9ca3af",
-        tabBarStyle: { borderTopColor: "#e5e7eb", height: 60, paddingBottom: 8, paddingTop: 6, backgroundColor: "#fff" },
-        tabBarLabelStyle: { fontWeight: "700" },
+        tabBarActiveTintColor: palette.accent,
+        tabBarInactiveTintColor: palette.textMuted,
+        tabBarStyle: {
+          borderTopColor: palette.cardBorder,
+          borderTopWidth: 1,
+          height: 68,
+          paddingBottom: 10,
+          paddingTop: 8,
+          backgroundColor: "rgba(2, 6, 23, 0.88)",
+        },
+        tabBarLabelStyle: { fontWeight: "800", letterSpacing: 0.3 },
       }}
     >
       <Tabs.Screen
@@ -46,6 +54,15 @@ export default function TabsLayout() {
           title: "캘린더",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="board"
+        options={{
+          title: "게시판",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles-outline" color={color} size={size} />
           ),
         }}
       />
