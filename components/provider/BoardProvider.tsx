@@ -18,6 +18,7 @@ type PostFilters = {
 
 type Ctx = {
   posts: Post[];
+  allPosts: Post[];
   categories: string[];
   loading: boolean;
   error: string | null;
@@ -34,6 +35,7 @@ const BoardContext = createContext<Ctx | null>(null);
 export function BoardProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<string[]>(["전체"]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,9 +56,27 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       const path = query ? "/posts?" + query : "/posts";
       const data = await http(path);
       setPosts(data);
+      const isUnfiltered = !filters.q && (!filters.category || filters.category === "전체");
+      if (isUnfiltered) {
+        setAllPosts(data);
+      } else {
+        http("/posts")
+          .then((all) => {
+            if (Array.isArray(all)) {
+              setAllPosts(all);
+            }
+          })
+          .catch(() => {
+            // ignore background refresh failure
+          });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "게시글을 불러오지 못했습니다.");
       setPosts([]);
+      const isUnfiltered = !filters.q && (!filters.category || filters.category === "전체");
+      if (isUnfiltered) {
+        setAllPosts([]);
+      }
     } finally {
       setTimeout(() => setLoading(false), 1000)
     }
@@ -84,6 +104,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     if (!token) throw new Error("로그인이 필요합니다.");
     const created = await http("/posts", { method: "POST", body: p, token });
     setPosts((prev) => [created, ...prev]);
+    setAllPosts((prev) => [created, ...prev]);
     await refresh();
     return created;
   }, [token, refresh]);
@@ -92,6 +113,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     if (!token) throw new Error("로그인이 필요합니다.");
     const updated = await http("/posts/" + id, { method: "PUT", body: patch, token });
     setPosts((prev) => prev.map((x) => (x.id === id ? { ...x, ...updated } : x)));
+    setAllPosts((prev) => prev.map((x) => (x.id === id ? { ...x, ...updated } : x)));
     await refresh();
     return updated;
   }, [token, refresh]);
@@ -100,6 +122,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     if (!token) throw new Error("로그인이 필요합니다.");
     await http("/posts/" + id, { method: "DELETE", token });
     setPosts((prev) => prev.filter((x) => x.id !== id));
+    setAllPosts((prev) => prev.filter((x) => x.id !== id));
     await refresh();
   }, [token, refresh]);
 
@@ -114,12 +137,17 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         const has = prev.some((x) => x.id === data.id);
         return has ? prev.map((x) => (x.id === data.id ? data : x)) : prev.concat(data);
       });
+      setAllPosts((prev) => {
+        const has = prev.some((x) => x.id === data.id);
+        return has ? prev.map((x) => (x.id === data.id ? data : x)) : prev.concat(data);
+      });
     }
     return data;
   }, [posts]);
 
   const value = useMemo(() => ({
     posts,
+    allPosts,
     categories,
     loading,
     error,
@@ -129,7 +157,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     remove,
     get,
     fetchById,
-  }), [posts, categories, loading, error, refresh, add, update, remove, get, fetchById]);
+  }), [posts, allPosts, categories, loading, error, refresh, add, update, remove, get, fetchById]);
 
   return <BoardContext.Provider value={value}>{children}</BoardContext.Provider>;
 }

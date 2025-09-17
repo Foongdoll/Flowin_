@@ -7,6 +7,7 @@ import ListItem from "../../../components/ui/ListItem";
 import FAB from "../../../components/ui/FAB";
 import { useBoard } from "../../../components/provider/BoardProvider";
 import { palette } from "../../../components/ui/theme";
+import AmbientBackdrop from "../../../components/ui/AmbientBackdrop";
 
 export default function BoardIndex() {
   const { posts, categories, loading, error, refresh } = useBoard();
@@ -33,6 +34,7 @@ export default function BoardIndex() {
 
   return (
     <View style={styles.container}>
+      <AmbientBackdrop />
       <HeaderBar title="게시판" subtitle="커뮤니티" />
       <View style={styles.body}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
@@ -87,7 +89,7 @@ function formatRelative(iso: string) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: palette.background },
+  container: { flex: 1, backgroundColor: palette.background, position: "relative" },
   body: { padding: 20, gap: 16 },
   catRow: { gap: 10, paddingRight: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: palette.cardBorder, backgroundColor: "rgba(148,163,184,0.1)" },

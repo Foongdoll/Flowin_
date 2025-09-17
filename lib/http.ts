@@ -1,6 +1,6 @@
 import { Alert } from "react-native";
 
-const API_URL_BASE = "https://543c913203e0.ngrok-free.app"; //(process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000").replace(/\/$/, "");
+const API_URL_BASE = "https://b820a232ec66.ngrok-free.app"; //(process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export type HttpOptions = {
   method?: string;
@@ -28,7 +28,7 @@ export async function http(path: string, options: HttpOptions = {}) {
       headers["Content-Type"] = "application/json";      
       body = JSON.stringify(payload);      
     }
-  }  
+  }
 
   if (options.token) {
     headers["Authorization"] = "Bearer " + options.token;

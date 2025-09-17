@@ -1,372 +1,122 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, FlatList, StyleSheet, Pressable, Alert } from "react-native";
-import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-
-import HeaderBar from "../../../components/ui/HeaderBar";
-import SearchInput from "../../../components/ui/SearchInput";
-import ListItem from "../../../components/ui/ListItem";
-
-import { palette } from "../../../components/ui/theme";
-import { useFriends } from "../../../components/provider/FriendsProvider";
-
+﻿import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import tokens from '../../../theme/tokens';
+import { FriendList } from '../../../components/friends/FriendList';
+import { FriendRequests } from '../../../components/friends/FriendRequests';
+import { FriendSearch } from '../../../components/friends/FriendSearch';
+
+const AnimatedPressable = Animated.createAnimatedComponent(View);
+
+const TAB_META: { key: 'list' | 'requests' | 'search'; label: string; helper: string }[] = [
+  { key: 'list', label: '길드원', helper: '함께 모험 중인 친구들' },
+  { key: 'requests', label: '길드 초대', helper: '들어온 초대를 확인해요' },
+  { key: 'search', label: '새 친구', helper: '이메일로 모험 동료 초대' },
+];
+
 export default function FriendsIndex() {
+  const [activeTab, setActiveTab] = React.useState<'list' | 'requests' | 'search'>('list');
 
-
-
-  const { friends, loading, addFriend, removeFriend } = useFriends();
-
-
-
-  const [q, setQ] = useState("");
-
-
-
-  const normalized = q.trim();
-
-
-
-  const lowered = normalized.toLowerCase();
-
-
-
-  const filtered = useMemo(() => {
-
-
-
-    if (!lowered) return friends;
-
-
-
-    return friends.filter((f) => f.name.toLowerCase().includes(lowered));
-
-
-
-  }, [friends, lowered]);
-
-
-
-  const hasDuplicate = friends.some((f) => f.name.toLowerCase() === lowered);
-
-
-
-  const canAdd = normalized.length > 0 && !hasDuplicate;
-
-
-
-  const onAdd = async () => {
-
-
-
-    try {
-
-
-
-      const friend = await addFriend(normalized);
-
-
-
-      setQ("");
-
-
-
-      Alert.alert("친구 추가", friend.name + " 님을 친구로 추가했습니다.");
-
-
-
-    } catch (error) {
-
-
-
-      const message = error instanceof Error ? error.message : "친구를 추가하지 못했습니다.";
-
-
-
-      Alert.alert("오류", message);
-
-
-
-    }
-
-
-
+  const renderContent = () => {
+    if (activeTab === 'requests') return <FriendRequests />;
+    if (activeTab === 'search') return <FriendSearch />;
+    return <FriendList />;
   };
-
-
-
-  const confirmRemove = (id: string, name: string) => {
-
-
-
-    Alert.alert("삭제", name + " 님을 친구 목록에서 삭제할까요?", [
-
-
-
-      { text: "취소", style: "cancel" },
-
-
-
-      {
-
-
-
-        text: "삭제",
-
-
-
-        style: "destructive",
-
-
-
-        onPress: () => {
-
-
-
-          removeFriend(id).catch(() => {
-
-
-
-            Alert.alert("오류", "친구를 삭제하지 못했습니다.");
-
-
-
-          });
-
-
-
-        },
-
-
-
-      },
-
-
-
-    ]);
-
-
-
-  };
-
-
-
-  const emptyMessage = loading ? "친구를 불러오는 중입니다..." : "등록된 친구가 없습니다. 검색 후 추가해 보세요.";
-
-
-
-  const renderEmpty = useCallback(() => <Text style={styles.empty}>{emptyMessage}</Text>, [emptyMessage]);
-
-
 
   return (
-
-
-
-    <View style={styles.container}>
-
-
-
-      <HeaderBar title="친구" subtitle="대화하기" />
-
-
-
-      <View style={styles.body}>
-
-
-
-        <SearchInput value={q} onChangeText={setQ} placeholder="친구 검색" />
-
-
-
-        {canAdd ? (
-
-
-
-          <Pressable style={styles.addAction} onPress={onAdd}>
-
-
-
-            <Ionicons name="person-add" size={18} color={palette.textPrimary} />
-
-
-
-            <Text style={styles.addText}>"{normalized}" 친구로 추가</Text>
-
-
-
-          </Pressable>
-
-
-
-        ) : null}
-
-
-
-        {!canAdd && normalized.length > 0 && hasDuplicate ? (
-
-
-
-          <Text style={styles.helper}>이미 같은 이름의 친구가 존재합니다.</Text>
-
-
-
-        ) : null}
-
-
-
-        <FlatList
-
-
-
-          data={filtered}
-
-
-
-          keyExtractor={(item) => item.id}
-
-
-
-          renderItem={({ item }) => (
-
-
-
-            <ListItem
-
-
-
-              title={item.name}
-
-
-
-              subtitle="대화를 시작하려면 탭하세요"
-
-
-
-              onPress={() => router.push({ pathname: "/(tabs)/friends/[id]", params: { id: item.id } })}
-
-
-
-              onLongPress={() => confirmRemove(item.id, item.name)}
-
-
-
-              right={<Ionicons name="chatbubble-ellipses-outline" size={18} color={palette.textMuted} />}
-
-
-
-            />
-
-
-
-          )}
-
-
-
-          extraData={emptyMessage}
-
-
-
-          ListEmptyComponent={renderEmpty}
-
-
-
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-
-
-
-          contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
-
-
-
-        />
-
-
-
-      </View>
-
-
-
+    <View style={styles.root}>
+      <LinearGradient
+        colors={tokens.colors.gradients.dusk}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
+      />
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <Text style={styles.title}>길드 광장</Text>
+        <Text style={styles.subtitle}>따뜻한 불빛 아래에서 함께할 친구들을 초대해요.</Text>
+        <View style={styles.tabs}>
+          {TAB_META.map((tab, index) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <AnimatedPressable
+                key={tab.key}
+                entering={FadeInDown.delay(index * 60)}
+                style={[styles.tabButton, isActive && styles.tabButtonActive]}
+              >
+                <Text
+                  onPress={() => setActiveTab(tab.key)}
+                  style={[styles.tabLabel, isActive && styles.tabLabelActive]}
+                >
+                  {tab.label}
+                </Text>
+                <Text style={[styles.tabHelper, isActive && styles.tabHelperActive]}>{tab.helper}</Text>
+              </AnimatedPressable>
+            );
+          })}
+        </View>
+      </SafeAreaView>
+      <View style={styles.content}>{renderContent()}</View>
     </View>
-
-
-
   );
-
-
-
 }
 
-
-
 const styles = StyleSheet.create({
-
-
-
-  container: { flex: 1, backgroundColor: palette.background },
-
-
-
-  body: { padding: 20, gap: 16 },
-
-
-
-  empty: { textAlign: "center", color: palette.textMuted, paddingVertical: 32 },
-
-
-
-  addAction: {
-
-
-
-    flexDirection: "row",
-
-
-
-    alignItems: "center",
-
-
-
-    gap: 8,
-
-
-
-    paddingHorizontal: 14,
-
-
-
-    paddingVertical: 10,
-
-
-
-    borderRadius: 999,
-
-
-
-    borderWidth: 1,
-
-
-
-    borderColor: palette.cardBorder,
-
-
-
-    backgroundColor: "rgba(124, 92, 255, 0.12)",
-
-
-
+  root: {
+    flex: 1,
+    backgroundColor: tokens.colors.background,
   },
-
-
-
-  addText: { color: palette.textPrimary, fontWeight: "700" },
-
-
-
-  helper: { color: palette.textMuted, fontSize: 12, marginTop: -4, marginBottom: -4 },
-
-
-
+  safeArea: {
+    paddingHorizontal: tokens.spacing.lg,
+    paddingBottom: tokens.spacing.md,
+    gap: tokens.spacing.sm,
+  },
+  title: {
+    color: tokens.colors.text.primary,
+    fontSize: tokens.typography.size.xl,
+    fontFamily: tokens.typography.fontFamily.bold,
+    letterSpacing: 1,
+  },
+  subtitle: {
+    color: tokens.colors.text.secondary,
+    fontSize: tokens.typography.size.sm,
+  },
+  tabs: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: tokens.spacing.sm,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: tokens.spacing.sm,
+    paddingHorizontal: tokens.spacing.sm,
+    borderRadius: tokens.radii.md,
+    borderWidth: tokens.borders.pixel.borderWidth,
+    borderColor: tokens.colors.border,
+    backgroundColor: 'rgba(30, 32, 55, 0.65)',
+  },
+  tabButtonActive: {
+    borderColor: tokens.colors.highlight,
+    backgroundColor: 'rgba(102, 132, 255, 0.28)',
+  },
+  tabLabel: {
+    color: tokens.colors.text.secondary,
+    fontSize: tokens.typography.size.md,
+    fontFamily: tokens.typography.fontFamily.medium,
+  },
+  tabLabelActive: {
+    color: tokens.colors.text.primary,
+  },
+  tabHelper: {
+    color: tokens.colors.text.muted,
+    fontSize: tokens.typography.size.xs,
+    marginTop: 4,
+  },
+  tabHelperActive: {
+    color: tokens.colors.text.secondary,
+  },
+  content: {
+    flex: 1,
+  },
 });
-
-
-

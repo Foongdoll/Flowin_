@@ -1,30 +1,52 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, FlatList } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import HeaderBar from "../../../components/ui/HeaderBar";
 import CalendarMonth from "../../../components/ui/CalendarMonth";
 import ListItem from "../../../components/ui/ListItem";
 import FAB from "../../../components/ui/FAB";
+import { ScheduleFilterCard } from '../../../components/ui/ScheduleFilterCard';
 import { useCalendar } from "../../../components/provider/CalendarProvider";
 import { router } from "expo-router";
-import { palette } from "../../../components/ui/theme";
+import tokens from '../../../theme/tokens';
+import AmbientBackdrop from "@/components/ui/AmbientBackdrop";
 
 export default function CalendarIndex() {
   const { events } = useCalendar();
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState<Date>(today);
+  
+  // Restore filter state when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      
+      return () => {
+      
+      };
+    }, [])
+  );
 
   const eventsByDayKey = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const e of events) {
+    events.forEach(e => {
       const d = keyOf(new Date(e.start));
       map[d] = (map[d] || 0) + 1;
-    }
+    });
     return map;
   }, [events]);
 
   const dayEvents = useMemo(() => {
     const k = keyOf(selected);
+    const handleSearch = (params: {
+      searchTerm: string;
+      dateRange: { startDate: Date; endDate: Date };
+      sortBy: 'date' | 'priority' | 'title';
+    }) => {
+      console.log('Search params:', params);
+      // TODO: Implement search logic
+    };
     return events
       .filter((e) => keyOf(new Date(e.start)) === k)
       .sort((a, b) => a.start.localeCompare(b.start));
@@ -46,6 +68,7 @@ export default function CalendarIndex() {
 
   return (
     <View style={styles.container}>
+      <AmbientBackdrop />
       <HeaderBar title="캘린더" subtitle="일정" />
       <View style={styles.body}>
         <CalendarMonth
@@ -69,7 +92,7 @@ export default function CalendarIndex() {
               <ListItem
                 title={item.title}
                 subtitle={`${formatRange(item.start, item.end)} • ${item.place || "장소 미정"}`}
-                onPress={() => router.push({ pathname: "/(tabs)/calendar/edit", params: { id: item.id } })}
+                onPress={() => router.push({ pathname: "/(tabs)/calendar/view", params: { id: item.id } })}
               />
             )}
             ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
@@ -107,9 +130,27 @@ function formatDayHeader(d: Date) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: palette.background },
-  body: { padding: 20, gap: 16 },
-  empty: { padding: 24, alignItems: "center" },
-  emptyText: { color: palette.textMuted },
-  section: { marginTop: 8, fontWeight: "800", color: palette.textSecondary },
+  container: {
+    flex: 1,
+    backgroundColor: tokens.colors.background,
+    position: 'relative',
+  },
+  body: {
+    padding: tokens.spacing.lg,
+    gap: tokens.spacing.md,
+  },
+  empty: {
+    padding: tokens.spacing.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: tokens.colors.text.muted,
+    fontSize: tokens.typography.size.sm,
+  },
+  section: {
+    marginTop: tokens.spacing.sm,
+    fontFamily: tokens.typography.fontFamily.bold,
+    color: tokens.colors.text.secondary,
+    fontSize: tokens.typography.size.md,
+  },
 });

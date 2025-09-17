@@ -23,6 +23,7 @@ type Ctx = {
   update: (id: string, patch: Partial<CalendarEvent>) => Promise<CalendarEvent>;
   remove: (id: string) => Promise<void>;
   get: (id: string) => CalendarEvent | undefined;
+  fetchById: (id: string) => Promise<CalendarEvent | undefined>;
 };
 
 const CalendarContext = createContext<Ctx | null>(null);
@@ -79,6 +80,20 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
 
   const get = useCallback((id: string) => events.find((item) => item.id === id), [events]);
 
+  const fetchById = useCallback(async (id: string) => {
+    const existing = events.find((item) => item.id === id);
+    if (existing) return existing;
+    if (!token) throw new Error("로그인이 필요합니다.");
+    const data = await http("/events/" + id, { token });
+    if (data) {
+      setEvents((prev) => {
+        const has = prev.some((item) => item.id === data.id);
+        return has ? prev.map((item) => (item.id === data.id ? data : item)) : prev.concat(data);
+      });
+    }
+    return data;
+  }, [events, token]);
+
   const value = useMemo(() => ({
     events,
     loading,
@@ -88,7 +103,8 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
     update,
     remove,
     get,
-  }), [events, loading, error, refresh, add, update, remove, get]);
+    fetchById,
+  }), [events, loading, error, refresh, add, update, remove, get, fetchById]);
 
   return <CalendarContext.Provider value={value}>{children}</CalendarContext.Provider>;
 }

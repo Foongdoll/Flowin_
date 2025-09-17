@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, StyleSheet, ViewStyle } from "react-native";
+import { View, TextInput, StyleSheet, ViewStyle, GestureResponderEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { palette, shadows } from "./theme";
 
@@ -12,9 +12,25 @@ type Props = {
 
 export default function SearchInput({ value, onChangeText, placeholder = "검색", style }: Props) {
   const [focused, setFocused] = useState(false);
+
+  const stopParentPress = (e: GestureResponderEvent) => {
+    // 부모 Pressable 등으로 이벤트 버블링 방지
+    (e as any).stopPropagation?.();
+  };
+
   return (
-    <View style={[styles.wrap, focused && styles.focused, style]}>
-      <Ionicons name="search-outline" size={18} color={palette.textMuted} style={{ marginHorizontal: 12 }} />
+    <View
+      style={[styles.wrap, focused && styles.focused, style]}
+      onTouchStart={stopParentPress}
+      accessible
+      accessibilityLabel="검색 입력창"
+    >
+      <Ionicons
+        name="search-outline"
+        size={18}
+        color={palette.textMuted}
+        style={styles.icon}
+      />
       <TextInput
         style={styles.input}
         placeholder={placeholder}
@@ -40,10 +56,19 @@ const styles = StyleSheet.create({
     backgroundColor: palette.backgroundAlt,
     flexDirection: "row",
     alignItems: "center",
+    overflow: "hidden", // 그림자/포커스 잘리거나 깨지지 않게
   },
   focused: {
     borderColor: palette.accent,
     ...shadows.glow,
   },
-  input: { flex: 1, paddingRight: 18, fontSize: 16, color: palette.textPrimary },
+  input: {
+    flex: 1,
+    paddingRight: 18,
+    fontSize: 16,
+    color: palette.textPrimary,
+  },
+  icon: {
+    marginHorizontal: 12,
+  },
 });

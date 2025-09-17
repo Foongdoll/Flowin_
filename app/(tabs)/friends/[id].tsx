@@ -27,6 +27,7 @@ export default function ChatRoom() {
   const [showEmoji, setShowEmoji] = useState(false);
 
   const friendName = friend?.name || (friendId ? "친구" : "친구");
+  const friendEmail = friend?.email;
 
   const send = () => {
     if (!text.trim()) return;
@@ -65,7 +66,7 @@ export default function ChatRoom() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={styles.container}>
-        <HeaderBar title={friendName} leftIcon="chevron-back" onLeftPress={() => router.back()} />
+        <HeaderBar title={friendName} subtitle={friendEmail || undefined} leftIcon="chevron-back" onLeftPress={() => router.back()} />
         <FlatList
           ref={listRef}
           data={msgs}

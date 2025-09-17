@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { palette } from "../../components/ui/theme";
+import AmbientBackdrop from "../../components/ui/AmbientBackdrop";
 import { useCalendar } from "../../components/provider/CalendarProvider";
 import { useRecents } from "../../components/provider/RecentsProvider";
 import { useBoard } from "../../components/provider/BoardProvider";
@@ -13,7 +14,7 @@ import ListItem from "../../components/ui/ListItem";
 export default function HomeScreen() {
   const { lastNote, lastPdf } = useRecents();
   const { events } = useCalendar();
-  const { posts, loading: boardLoading } = useBoard();
+  const { allPosts, loading: boardLoading } = useBoard();
   const upcoming = useMemo(() => {
     const now = new Date();
     return events
@@ -21,10 +22,11 @@ export default function HomeScreen() {
       .sort((a, b) => a.start.localeCompare(b.start))
       .slice(0, 3);
   }, [events]);
-  const recentPosts = useMemo(() => posts.slice(0, 5), [posts]);
+  const recentPosts = useMemo(() => allPosts.slice(0, 5), [allPosts]);
 
   return (
     <SafeAreaView style={styles.safe}>
+      <AmbientBackdrop />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <HeaderBar title="Flowin" subtitle="학습을 더 효과적으로" />
 
@@ -38,7 +40,7 @@ export default function HomeScreen() {
                 key={e.id}
                 title={e.title}
                 subtitle={formatDayTime(e.start) + " • " + (e.place || "장소 미정")}
-                onPress={() => router.push({ pathname: "/(tabs)/calendar/edit", params: { id: e.id } })}
+                onPress={() => router.push({ pathname: "/(tabs)/calendar/view", params: { id: e.id } })}
               />
             ))
           )}

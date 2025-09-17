@@ -1,5 +1,5 @@
-import React from "react";
-import { Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { gradients, palette, shadows } from "./theme";
@@ -12,26 +12,61 @@ type Props = {
   style?: ViewStyle | ViewStyle[];
 };
 
+const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
+
 export default function Card({ title, subtitle, icon, onPress, style }: Props) {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 4200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 4200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pulse]);
+
+  const animatedStyle = {
+    transform: [
+      {
+        scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] }),
+      },
+    ],
+  };
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.base, pressed && styles.pressed, style]}
     >
-      <LinearGradient colors={gradients.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
-        <View style={styles.row}>
-          {icon ? (
-            <View style={styles.iconWrap}>
-              <Ionicons name={icon} size={22} color={palette.textPrimary} />
+      <Animated.View style={[styles.animated, animatedStyle]}>
+        <AnimatedGradient colors={gradients.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
+          <View style={styles.row}>
+            {icon ? (
+              <View style={styles.iconWrap}>
+                <Ionicons name={icon} size={22} color={palette.textPrimary} />
+              </View>
+            ) : null}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>{title}</Text>
+              {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
             </View>
-          ) : null}
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            <Ionicons name="chevron-forward" size={16} color={palette.textMuted} />
           </View>
-          <Ionicons name="chevron-forward" size={16} color={palette.textMuted} />
-        </View>
-      </LinearGradient>
+        </AnimatedGradient>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -42,6 +77,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     ...shadows.glow,
   },
+  animated: { borderRadius: 18 },
   card: {
     padding: 18,
     borderRadius: 18,

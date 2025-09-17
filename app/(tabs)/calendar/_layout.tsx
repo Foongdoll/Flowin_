@@ -1,7 +1,28 @@
-import { Stack } from "expo-router";
-import React from "react";
+﻿import React from 'react';
+import { Stack } from 'expo-router';
+import { ParallaxBackground } from '../../../components/ui/ParallaxBackground';
+import tokens from '../../../theme/tokens';
 
 export default function CalendarStackLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <ParallaxBackground>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: 'transparent',
+          },
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="view" />
+        <Stack.Screen
+          name="edit"
+          options={{
+            presentation: 'modal',
+          }}
+        />
+      </Stack>
+    </ParallaxBackground>
+  );
 }
-
