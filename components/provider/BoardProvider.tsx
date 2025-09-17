@@ -1,71 +1,136 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+﻿import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { http } from "../../lib/http";
+import { useAuth } from "./AuthProvider";
 
 export type Post = {
   id: string;
   title: string;
   content: string;
-  author: string;
-  createdAt: string; // ISO
   category: string;
+  createdAt: string;
+  authorName?: string | null;
+};
+
+type PostFilters = {
+  q?: string;
+  category?: string;
 };
 
 type Ctx = {
   posts: Post[];
   categories: string[];
-  add: (p: Omit<Post, "id" | "createdAt"> & { createdAt?: string }) => string;
-  update: (id: string, patch: Partial<Post>) => void;
-  remove: (id: string) => void;
+  loading: boolean;
+  error: string | null;
+  refresh: (filters?: PostFilters) => Promise<void>;
+  add: (p: { title: string; content: string; category: string; authorName?: string }) => Promise<Post>;
+  update: (id: string, patch: Partial<Post>) => Promise<Post>;
+  remove: (id: string) => Promise<void>;
   get: (id: string) => Post | undefined;
+  fetchById: (id: string) => Promise<Post>;
 };
 
 const BoardContext = createContext<Ctx | null>(null);
 
-function seed(): Post[] {
-  const now = Date.now();
-  const cats = ["공지", "질문", "팁", "모집", "자유", "버그"];
-  const mk = (i: number, title: string, category: string): Post => ({
-    id: `${now - i}`,
-    title,
-    content: `${title}\n\n샘플 본문입니다. 실제 백엔드 연동 시 교체됩니다.`,
-    author: i % 2 ? "홍길동" : "관리자",
-    createdAt: new Date(now - i * 3600_000).toISOString(),
-    category,
-  });
-  return [
-    mk(1, "공지: 앱 업데이트 안내", cats[0]),
-    mk(2, "질문: PDF 마스킹 단축키 있나요?", cats[1]),
-    mk(3, "팁: 노트 미리보기 활용법", cats[2]),
-    mk(4, "스터디 모집: 토요일 2시", cats[3]),
-    mk(5, "자유: 오늘의 공부 인증", cats[4]),
-    mk(6, "버그 제보: 채팅 입력바 겹침", cats[5]),
-  ];
-}
-
 export function BoardProvider({ children }: { children: React.ReactNode }) {
-  const [posts, setPosts] = useState<Post[]>(() => seed());
-  const categories = ["전체", "공지", "질문", "팁", "모집", "자유", "버그"] as const;
+  const { token } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<string[]>(["전체"]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const filtersRef = useRef<PostFilters>({});
 
-  const add: Ctx["add"] = useCallback((p) => {
-    const id = `${Date.now()}`;
-    const createdAt = p.createdAt ?? new Date().toISOString();
-    setPosts((prev) => [
-      { id, createdAt, title: p.title, content: p.content, author: p.author, category: p.category },
-      ...prev,
-    ]);
-    return id;
+  const refresh = useCallback(async (nextFilters?: PostFilters) => {
+    const filters = nextFilters ?? filtersRef.current;
+    if (nextFilters) {
+      filtersRef.current = { ...nextFilters };
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const qs = new URLSearchParams();
+      if (filters.q) qs.append("q", filters.q);
+      if (filters.category && filters.category !== "전체") qs.append("category", filters.category);
+      const query = qs.toString();
+      const path = query ? "/posts?" + query : "/posts";
+      const data = await http(path);
+      setPosts(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "게시글을 불러오지 못했습니다.");
+      setPosts([]);
+    } finally {
+      setTimeout(() => setLoading(false), 1000)
+    }
   }, []);
 
-  const update: Ctx["update"] = useCallback((id, patch) => {
-    setPosts((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await http("/posts/categories");
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setCategories(data);
+        }
+      } catch {
+        // ignore category load failures
+      }
+    })();
+    refresh();
+    return () => {
+      cancelled = true;
+    };
+  }, [refresh]);
 
-  const remove: Ctx["remove"] = useCallback((id) => {
+  const add: Ctx["add"] = useCallback(async (p) => {
+    if (!token) throw new Error("로그인이 필요합니다.");
+    const created = await http("/posts", { method: "POST", body: p, token });
+    setPosts((prev) => [created, ...prev]);
+    await refresh();
+    return created;
+  }, [token, refresh]);
+
+  const update: Ctx["update"] = useCallback(async (id, patch) => {
+    if (!token) throw new Error("로그인이 필요합니다.");
+    const updated = await http("/posts/" + id, { method: "PUT", body: patch, token });
+    setPosts((prev) => prev.map((x) => (x.id === id ? { ...x, ...updated } : x)));
+    await refresh();
+    return updated;
+  }, [token, refresh]);
+
+  const remove: Ctx["remove"] = useCallback(async (id) => {
+    if (!token) throw new Error("로그인이 필요합니다.");
+    await http("/posts/" + id, { method: "DELETE", token });
     setPosts((prev) => prev.filter((x) => x.id !== id));
-  }, []);
+    await refresh();
+  }, [token, refresh]);
 
-  const get: Ctx["get"] = useCallback((id) => posts.find((x) => x.id === id), [posts]);
+  const get = useCallback((id: string) => posts.find((x) => x.id === id), [posts]);
 
-  const value = useMemo(() => ({ posts, categories: categories as unknown as string[], add, update, remove, get }), [posts, add, update, remove, get]);
+  const fetchById: Ctx["fetchById"] = useCallback(async (id) => {
+    const existing = posts.find((x) => x.id === id);
+    if (existing) return existing;
+    const data = await http("/posts/" + id);
+    if (data) {
+      setPosts((prev) => {
+        const has = prev.some((x) => x.id === data.id);
+        return has ? prev.map((x) => (x.id === data.id ? data : x)) : prev.concat(data);
+      });
+    }
+    return data;
+  }, [posts]);
+
+  const value = useMemo(() => ({
+    posts,
+    categories,
+    loading,
+    error,
+    refresh,
+    add,
+    update,
+    remove,
+    get,
+    fetchById,
+  }), [posts, categories, loading, error, refresh, add, update, remove, get, fetchById]);
+
   return <BoardContext.Provider value={value}>{children}</BoardContext.Provider>;
 }
 

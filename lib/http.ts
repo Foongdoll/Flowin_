@@ -1,6 +1,6 @@
 import { Alert } from "react-native";
 
-const API_URL_BASE = "https://325c133db7e8.ngrok-free.app"; //(process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000").replace(/\/$/, "");
+const API_URL_BASE = "https://543c913203e0.ngrok-free.app"; //(process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export type HttpOptions = {
   method?: string;
@@ -24,9 +24,9 @@ export async function http(path: string, options: HttpOptions = {}) {
   if (payload !== undefined && payload !== null) {
     if (typeof FormData !== "undefined" && payload instanceof FormData) {
       body = payload as BodyInit;
-    } else {
-      headers["Content-Type"] = "application/json";
-      body = JSON.stringify(payload);
+    } else {      
+      headers["Content-Type"] = "application/json";      
+      body = JSON.stringify(payload);      
     }
   }  
 

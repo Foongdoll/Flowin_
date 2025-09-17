@@ -9,6 +9,7 @@ import { palette } from "../../../components/ui/theme";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import * as ImagePicker from "expo-image-picker";
+import { useFriends } from "../../../components/provider/FriendsProvider";
 
 type Msg =
   | { id: string; from: "me" | "friend"; type: "text"; text: string }
@@ -17,15 +18,15 @@ type Msg =
 
 export default function ChatRoom() {
   const { id } = useLocalSearchParams<{ id?: string }>();
+  const { getFriend } = useFriends();
+  const friendId = typeof id === "string" ? id : undefined;
+  const friend = useMemo(() => (friendId ? getFriend(friendId) : undefined), [friendId, getFriend]);
   const [text, setText] = useState("");
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { id: "m1", from: "friend", type: "text", text: "안녕! 공부 잘 되고 있어?" },
-    { id: "m2", from: "me", type: "text", text: "응! 노트 정리 중이야." },
-  ]);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
   const listRef = useRef<FlatList<Msg>>(null);
   const [showEmoji, setShowEmoji] = useState(false);
 
-  const friendName = useMemo(() => (id ? `친구 (${id})` : "친구"), [id]);
+  const friendName = friend?.name || (friendId ? "친구" : "친구");
 
   const send = () => {
     if (!text.trim()) return;
@@ -69,6 +70,11 @@ export default function ChatRoom() {
           ref={listRef}
           data={msgs}
           keyExtractor={(m) => m.id}
+          ListEmptyComponent={() => (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>아직 메시지가 없습니다. 대화를 시작해 보세요.</Text>
+            </View>
+          )}
           renderItem={({ item }) => {
             const common = [styles.bubble, item.from === "me" ? styles.mine : styles.theirs];
             if (item.type === "text") {
@@ -128,4 +134,6 @@ const styles = StyleSheet.create({
   image: { width: 160, height: 160, borderRadius: 8 },
   emojiPanel: { position: "absolute", left: 0, right: 0, bottom: 60, backgroundColor: palette.backgroundAlt, borderTopWidth: 1, borderColor: palette.cardBorder, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 4, flexDirection: "row", flexWrap: "wrap" },
   emojiCell: { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: 8, margin: 4, backgroundColor: "rgba(124,92,255,0.15)" },
+  empty: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  emptyText: { color: palette.textMuted },
 });

@@ -7,13 +7,19 @@ type Props = {
   title: string;
   subtitle?: string;
   onPress?: () => void;
+  onLongPress?: () => void;
   right?: React.ReactNode;
   style?: ViewStyle | ViewStyle[];
 };
 
-export default function ListItem({ title, subtitle, onPress, right, style }: Props) {
+export default function ListItem({ title, subtitle, onPress, onLongPress, right, style }: Props) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.item, pressed && styles.pressed, style]}>
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={260}
+      style={({ pressed }) => [styles.item, pressed && styles.pressed, style]}
+    >
       <View style={{ flex: 1 }}>
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}

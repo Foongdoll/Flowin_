@@ -1,49 +1,95 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { http } from "../../lib/http";
+import { useAuth } from "./AuthProvider";
 
 export type CalendarEvent = {
   id: string;
   title: string;
   description?: string;
-  participants?: string; // comma-separated for now
+  participants?: string;
   place?: string;
   supplies?: string;
   remarks?: string;
-  start: string; // ISO 8601 string
-  end: string;   // ISO 8601 string
+  start: string;
+  end: string;
 };
 
 type Ctx = {
   events: CalendarEvent[];
-  add: (e: Omit<CalendarEvent, "id">) => string;
-  update: (id: string, patch: Partial<CalendarEvent>) => void;
-  remove: (id: string) => void;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  add: (e: Omit<CalendarEvent, "id">) => Promise<CalendarEvent>;
+  update: (id: string, patch: Partial<CalendarEvent>) => Promise<CalendarEvent>;
+  remove: (id: string) => Promise<void>;
   get: (id: string) => CalendarEvent | undefined;
 };
 
 const CalendarContext = createContext<Ctx | null>(null);
 
 export function CalendarProvider({ children }: { children: React.ReactNode }) {
-  const [events, setEvents] = useState<CalendarEvent[]>(() => []);
+  const { token } = useAuth();
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const add: Ctx["add"] = useCallback((e) => {
-    const id = `${Date.now()}`;
-    setEvents((prev) => [...prev, { ...e, id }]);
-    return id;
-  }, []);
+  const refresh = useCallback(async () => {
+    if (!token) {
+      setEvents([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await http("/events", { token });
+      setEvents(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "일정을 불러오지 못했습니다.");
+      setEvents([]);
+    } finally {
+      setTimeout(() => setLoading(false), 1000)
+    }
+  }, [token]);
 
-  const update: Ctx["update"] = useCallback((id, patch) => {
-    setEvents((prev) => prev.map((ev) => (ev.id === id ? { ...ev, ...patch } : ev)));
-  }, []);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  const remove: Ctx["remove"] = useCallback((id) => {
-    setEvents((prev) => prev.filter((ev) => ev.id !== id));
-  }, []);
+  const add: Ctx["add"] = useCallback(async (e) => {
+    if (!token) throw new Error("로그인이 필요합니다.");
+    const created = await http("/events", { method: "POST", body: e, token });
+    setEvents((prev) => prev.concat(created));
+    return created;
+  }, [token]);
 
-  const get: Ctx["get"] = useCallback((id) => {
-    return events.find((e) => e.id === id);
-  }, [events]);
+  const update: Ctx["update"] = useCallback(async (id, patch) => {
+    if (!token) throw new Error("로그인이 필요합니다.");
+    const updated = await http("/events/" + id, { method: "PUT", body: patch, token });
+    setEvents((prev) => prev.map((item) => (item.id === id ? { ...item, ...updated } : item)));
+    return updated;
+  }, [token]);
 
-  const value = useMemo(() => ({ events, add, update, remove, get }), [events, add, update, remove, get]);
+  const remove: Ctx["remove"] = useCallback(async (id) => {
+    if (!token) throw new Error("로그인이 필요합니다.");
+    await http("/events/" + id, { method: "DELETE", token });
+    setEvents((prev) => prev.filter((item) => item.id !== id));
+  }, [token]);
+
+  const get = useCallback((id: string) => events.find((item) => item.id === id), [events]);
+
+  const value = useMemo(() => ({
+    events,
+    loading,
+    error,
+    refresh,
+    add,
+    update,
+    remove,
+    get,
+  }), [events, loading, error, refresh, add, update, remove, get]);
+
   return <CalendarContext.Provider value={value}>{children}</CalendarContext.Provider>;
 }
 
@@ -52,4 +98,3 @@ export function useCalendar() {
   if (!ctx) throw new Error("useCalendar must be used within CalendarProvider");
   return ctx;
 }
-

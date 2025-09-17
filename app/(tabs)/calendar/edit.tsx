@@ -48,16 +48,21 @@ export default function EditEvent() {
   } as const;
   const isValid = !errors.title && !errors.start && !errors.end && !errors.range;
 
-  const onSave = () => {
+  const onSave = async () => {
     setSubmitted(true);
     if (!isValid) return;
-    if (isNew) {
-      add({ title, description, participants, place, supplies, remarks, start, end });
-      router.replace("/(tabs)/calendar" as any);
-    } else {
-      update(id!, { title, description, participants, place, supplies, remarks, start, end });
-      Alert.alert("저장 완료", "일정이 저장되었습니다.");
-      router.replace("/(tabs)/calendar" as any);
+    try {
+      if (isNew) {
+        await add({ title, description, participants, place, supplies, remarks, start, end });
+        router.replace("/(tabs)/calendar" as any);
+      } else {
+        await update(id!, { title, description, participants, place, supplies, remarks, start, end });
+        Alert.alert("저장 완료", "일정이 저장되었습니다.");
+        router.replace("/(tabs)/calendar" as any);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "일정을 저장하지 못했습니다.";
+      Alert.alert("오류", message);
     }
   };
 
@@ -68,9 +73,14 @@ export default function EditEvent() {
       {
         text: "삭제",
         style: "destructive",
-        onPress: () => {
-          remove(id);
-          router.back();
+        onPress: async () => {
+          try {
+            await remove(id);
+            router.back();
+          } catch (err) {
+            const message = err instanceof Error ? err.message : "일정을 삭제하지 못했습니다.";
+            Alert.alert("오류", message);
+          }
         },
       },
     ]);

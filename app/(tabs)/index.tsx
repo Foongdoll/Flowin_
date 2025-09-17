@@ -13,7 +13,7 @@ import ListItem from "../../components/ui/ListItem";
 export default function HomeScreen() {
   const { lastNote, lastPdf } = useRecents();
   const { events } = useCalendar();
-  const { posts } = useBoard();
+  const { posts, loading: boardLoading } = useBoard();
   const upcoming = useMemo(() => {
     const now = new Date();
     return events
@@ -67,14 +67,20 @@ export default function HomeScreen() {
           </Pressable>
         </View>
         <View style={[styles.grid, styles.boardList]}>
-          {recentPosts.map((p) => (
-            <ListItem
-              key={p.id}
-              title={p.title}
-              subtitle={"[" + p.category + "] " + p.author + " • " + new Date(p.createdAt).toLocaleDateString()}
-              onPress={() => router.push({ pathname: "/(tabs)/board/[id]", params: { id: p.id } })}
-            />
-          ))}
+          {boardLoading ? (
+            <Text style={styles.muted}>게시글을 불러오는 중입니다...</Text>
+          ) : recentPosts.length === 0 ? (
+            <Text style={styles.muted}>최근 게시글이 없습니다.</Text>
+          ) : (
+            recentPosts.map((p) => (
+              <ListItem
+                key={p.id}
+                title={p.title}
+                subtitle={"[" + p.category + "] " + (p.authorName || "익명") + " • " + new Date(p.createdAt).toLocaleDateString()}
+                onPress={() => router.push({ pathname: "/(tabs)/board/[id]", params: { id: p.id } })}
+              />
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
