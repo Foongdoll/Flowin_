@@ -112,10 +112,11 @@ export const tokens = {
   },
   typography: {
     fontFamily: {
-      regular: 'System',
-      medium: 'System',
-      bold: 'System',
-      pixel: 'System',
+      regular: 'Dongle-Regular',
+      medium: 'Dongle-Regular',
+      bold: 'Dongle-Bold',
+      light: 'Dongle-Light',
+      pixel: 'Dongle-Bold',
     },
     size: {
       xs: 12,

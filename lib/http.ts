@@ -1,6 +1,6 @@
 import { Alert } from "react-native";
 
-const API_URL_BASE = "https://b820a232ec66.ngrok-free.app"; //(process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000").replace(/\/$/, "");
+const API_URL_BASE = "https://3206703088d0.ngrok-free.app"; //(process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000").replace(/\/$/, "");
 
 export type HttpOptions = {
   method?: string;
